@@ -1,0 +1,31 @@
+{
+  "extends": "eslint:recommended",
+  "parserOptions": {
+    "ecmaVersion": 7
+  },
+  "env": {
+    "browser": true,
+    "es6": true,
+    "jquery": true,
+  },
+  "globals": {
+
+  },
+  "rules": {
+    "quotes": [
+      1,
+      "single"
+    ],
+    "linebreak-style": [
+      1,
+      "unix"
+    ],
+    "semi": [
+      1,
+      "always"
+    ],
+    "no-redeclare": [
+      0
+    ]
+  },
+}
