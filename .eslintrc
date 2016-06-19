@@ -26,6 +26,9 @@
     ],
     "no-redeclare": [
       0
+    ],
+    "no-console": [
+      1
     ]
-  },
+  }
 }

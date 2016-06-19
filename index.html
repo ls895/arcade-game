@@ -7,6 +7,34 @@
 </head>
 <body>
     <div class="score"></div>
+    <script id="ai" type="javascript/worker">
+        var DATA;
+        var REACTION_TIME = 150;
+
+        function receive(e) {
+            DATA = JSON.parse(e.data);
+            setTimeout(think, REACTION_TIME);
+        }
+
+        function think() {
+            //do something about data
+
+
+            //Behavior Tree
+
+
+
+            // console.log(DATA);
+            post();
+        }
+
+        function post() {
+            postMessage('diu');
+        }
+
+        self.onmessage = receive;
+    </script>
+    <script src="js/worker.js"></script>
     <script src="js/resources.js"></script>
     <script src="js/app.js"></script>
     <script src="js/engine.js"></script>

@@ -1,3 +1,7 @@
+var GAME_STATE = {
+    player: {},
+    enemy: {}
+};
 /**
  * Enemy constructor
  * @param  {integer} x    x-axis location
@@ -15,14 +19,14 @@ var Enemy = function(x, yi, dxdt) {
 
 Enemy.maxBound = 505;
 
-Enemy.maxNo = 7;
+Enemy.maxNo = 5;
 
 Enemy.ranRow = function() {
     return (Math.floor(Math.random() * 3) + 1);
 };
 
 Enemy.ranSpd = function() {
-    return (Math.random() * 100 + 200);
+    return (Math.random() * 100 + 100);
 };
 
 /**
@@ -100,6 +104,17 @@ Player.prototype.toPixel = function() {
 
 Player.prototype.update = function() {
 //Do some shit to update the player at every frame
+    if (!aiWorker.isThinking) {
+        aiWorker.isThinking = true;
+        GAME_STATE.player.x = this.x;
+        GAME_STATE.player.y = this.y;
+        for (var i = 0; i < allEnemies.length; i++) {
+            var x = allEnemies[i].x;
+            var y = allEnemies[i].y;
+            GAME_STATE.enemy['Enemy' + i] = [x, y];
+        }
+        aiWorker.postMessage(JSON.stringify(GAME_STATE));
+    }
 };
 
 Player.prototype.render = function() {
@@ -124,7 +139,6 @@ Player.prototype.handleInput = function(key) {
         this.yi -= 1;
         if (this.yi === 0) {
             this.reset(2, 5);
-
             return;
         } else {
             this.toPixel();
