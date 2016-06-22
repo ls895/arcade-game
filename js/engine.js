@@ -23,7 +23,8 @@ var Engine = (function(global) {
         win = global.window,
         canvas = doc.createElement('canvas'),
         ctx = canvas.getContext('2d'),
-        lastTime;
+        lastTime,
+        animationID;
 
     canvas.width = 505;
     canvas.height = 606;
@@ -56,7 +57,9 @@ var Engine = (function(global) {
         /* Use the browser's requestAnimationFrame function to call this
          * function again as soon as the browser is able to draw another frame.
          */
-        win.requestAnimationFrame(main);
+                // console.log(animationID);
+        animationID = win.requestAnimationFrame(main);
+
     }
 
     /* This function does some initial setup that should only occur once,
@@ -64,9 +67,7 @@ var Engine = (function(global) {
      * game loop.
      */
     function init() {
-        reset();
-        lastTime = Date.now();
-        main();
+        ctx.drawImage(Resources.get('images/splash.png'), 0, 0);
     }
 
     /* This function is called by main (our game loop) and itself calls all
@@ -80,7 +81,6 @@ var Engine = (function(global) {
      */
     function update(dt) {
         updateEntities(dt);
-        // checkCollisions();
     }
 
     /* This is called by the update function and loops through all of the
@@ -94,7 +94,7 @@ var Engine = (function(global) {
         allEnemies.forEach(function(enemy) {
             enemy.update(dt);
         });
-        player.update();
+        player.update(dt);
     }
 
     /* This function initially draws the "game level", it will then call
@@ -159,14 +159,32 @@ var Engine = (function(global) {
      * those sorts of things. It's only called once by the init() method.
      */
     function reset() {
-        // noop
+        Enemy.getSetting();
+
+        allEnemies.length = 0;
+
+        for (var i = 0; i < Enemy.maxNo; i++) {
+            allEnemies.push(new Enemy(-50.5, Enemy.ranRow(), Enemy.ranSpd()));
+        }
+
+        if (animationID) {
+            win.cancelAnimationFrame(animationID);
+            player.life = 3;
+            player.reset(2, 5);
+        }
+        
+        lastTime = Date.now();
+        win.requestAnimationFrame(main);
     }
+
+    document.getElementById('start').addEventListener('click', reset);
 
     /* Go ahead and load all of the images we know we're going to need to
      * draw our game level. Then set init as the callback method, so that when
      * all of these images are properly loaded our game will start.
      */
     Resources.load([
+        'images/splash.png',
         'images/stone-block.png',
         'images/water-block.png',
         'images/grass-block.png',

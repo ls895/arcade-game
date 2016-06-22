@@ -1,9 +1,9 @@
 /**
  * Enemy constructor
- * @param  {integer} x    x-axis location
- * @param  {integer} y    y-axis location
- * @param  {integer} dxdt movement speed
- * @return {object} Enemy a new <pre><code>Enemy</code></pre> object
+ * @param  {float} x      horizontal coordinate
+ * @param  {integer} yi   row number
+ * @param  {integer} dxdt speed as pixel per second
+ * @return {object} Enemy Enemy object
  */
 var Enemy = function(x, yi, dxdt) {
     this.x = x;
@@ -13,22 +13,41 @@ var Enemy = function(x, yi, dxdt) {
     this.sprite = 'images/enemy-bug.png';
 };
 
+/**
+ * Horizontal position limit for Enemy
+ * @type {Number}
+ */
 Enemy.maxBound = 505;
 
-Enemy.maxNo = 7;
+Enemy.spread = 100;
 
+Enemy.getSetting = function() {
+    var e = document.getElementById('number');
+    Enemy.maxNo = parseInt(e.options[e.selectedIndex].value);
+    e = document.getElementById('difficulty');
+    Enemy.baseSpeed = parseInt(e.options[e.selectedIndex].value);
+};
+
+/**
+ * Generate a random row number
+ * @return {integer} a random row number
+ */
 Enemy.ranRow = function() {
     return (Math.floor(Math.random() * 3) + 1);
 };
 
+/**
+ * Generate a random speed mean 250 pixel per second
+ * @return {float} a random speed
+ */
 Enemy.ranSpd = function() {
-    return (Math.random() * 100 + 200);
+    return (Math.random() * Enemy.spread + Enemy.baseSpeed);
 };
 
 /**
- * Enemy update position
- * @param  {integer} dt time delta between ticks
- * @return {undefined}
+ * Update enemy object per tick
+ * @param  {float} dt time delta between ticks
+ * @return {null}
  */
 Enemy.prototype.update = function(dt) {
     this.x += this.dxdt * dt;
@@ -38,6 +57,10 @@ Enemy.prototype.update = function(dt) {
     this.checkCollision();
 };
 
+/**
+ * Check enemy and player object collision
+ * @return {null}
+ */
 Enemy.prototype.checkCollision = function() {
     this.left = this.x + 2;
     this.right = this.x + 98;
@@ -60,10 +83,15 @@ Enemy.prototype.checkCollision = function() {
         &&
         (this.yi === player.yi)
     ) {
+        player.life -= 1;
         player.reset(2, 5);
     }
 };
 
+/**
+ * Reset enemy object position to left of screen and assign a random row and spd
+ * @return {null}
+ */
 Enemy.prototype.reset = function() {
     this.yi = Enemy.ranRow();
     this.x = -50.5;
@@ -91,6 +119,29 @@ var Player = function(xi, yi) {
     this.yi = yi;
     this.toPixel();
     this.sprite = 'images/char-boy.png';
+    this.energy = 100;
+    this.life = 3;
+};
+
+Player.prototype.attack = function() {
+    if (this.energy >= 20) {
+        var bug;
+        this.energy -= 20;
+        for (var i = 0; i < allEnemies.length; i++) {
+            bug = allEnemies[i];
+            if (
+                (
+                    bug.right > this.left - 50
+                    &&
+                    bug.right < this.left
+                )
+                &&
+                (bug.yi === this.yi)
+            ) {
+                bug.reset();
+            }
+        }
+    }
 };
 
 Player.prototype.toPixel = function() {
@@ -98,8 +149,17 @@ Player.prototype.toPixel = function() {
     this.y = 83 * this.yi - 30;
 };
 
-Player.prototype.update = function() {
-//Do some shit to update the player at every frame
+Player.prototype.update = function(dt) {
+    if (this.life === 0) {
+        console.log('game over');
+    }
+    if (this.energy < 100) {
+        if (this.energy + 10 * dt < 100) {
+            this.energy += 10 * dt;
+        } else {
+            this.energy = 100;
+        }
+    }
 };
 
 Player.prototype.render = function() {
@@ -124,12 +184,13 @@ Player.prototype.handleInput = function(key) {
         this.yi -= 1;
         if (this.yi === 0) {
             this.reset(2, 5);
-
             return;
         } else {
             this.toPixel();
             return;
         }
+    case (key === 'space'):
+        this.attack();
     }
 };
 
@@ -141,17 +202,15 @@ Player.prototype.reset = function(xi, yi) {
 // Now instantiate your objects.
 // Place all enemy objects in an array called allEnemies
 // Place the player object in a variable called player
-var player = new Player(2, 5);
 
 var allEnemies = [];
-for (var i = 0; i < Enemy.maxNo; i++) {
-    allEnemies.push(new Enemy(-50.5, Enemy.ranRow(), Enemy.ranSpd()));
-}
+var player = new Player(2, 5);
 
 // This listens for key presses and sends the keys to your
 // Player.handleInput() method. You don't need to modify this.
 document.addEventListener('keyup', function(e) {
     var allowedKeys = {
+        32: 'space',
         37: 'left',
         38: 'up',
         39: 'right',
