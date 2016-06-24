@@ -6,7 +6,7 @@
  * A game engine works by drawing the entire game screen over and over, kind of
  * like a flipbook you may have created as a kid. When your player moves across
  * the screen, it may look like just that image/character is moving or being
- * drawn but that is not the case. What's really happening is the entire "scene"
+ * drawn but that is not the case. What's really happening is the entire 'scene'
  * is being drawn over and over, presenting the illusion of animation.
  *
  * This engine is available globally via the Engine variable and it also makes
@@ -57,7 +57,7 @@ var Engine = (function(global) {
         /* Use the browser's requestAnimationFrame function to call this
          * function again as soon as the browser is able to draw another frame.
          */
-                // console.log(animationID);
+
         animationID = win.requestAnimationFrame(main);
 
     }
@@ -67,7 +67,11 @@ var Engine = (function(global) {
      * game loop.
      */
     function init() {
-        ctx.drawImage(Resources.get('images/splash.png'), 0, 0);
+        ctx.font = '30px Arial';
+        ctx.fillStyle = 'black';
+        ctx.fillText('1. Select no. of enemies', 10, 100);
+        ctx.fillText('2. Select difficulty', 10, 150);
+        ctx.fillText('3. Press start to play or reset game', 10, 200);
     }
 
     /* This function is called by main (our game loop) and itself calls all
@@ -97,7 +101,7 @@ var Engine = (function(global) {
         player.update(dt);
     }
 
-    /* This function initially draws the "game level", it will then call
+    /* This function initially draws the 'game level', it will then call
      * the renderEntities function. Remember, this function is called every
      * game tick (or loop of the game engine) because that's how games work -
      * they are flipbooks creating the illusion of animation but in reality
@@ -121,7 +125,7 @@ var Engine = (function(global) {
 
         /* Loop through the number of rows and columns we've defined above
          * and, using the rowImages array, draw the correct image for that
-         * portion of the "grid"
+         * portion of the 'grid'
          */
         for (row = 0; row < numRows; row++) {
             for (col = 0; col < numCols; col++) {
@@ -159,22 +163,27 @@ var Engine = (function(global) {
      * those sorts of things. It's only called once by the init() method.
      */
     function reset() {
-        Enemy.getSetting();
+        this.blur();
+        if (Enemy.getSetting()) {
+            ctx.fillStyle = 'red';
 
-        allEnemies.length = 0;
+            allEnemies.length = 0;
 
-        for (var i = 0; i < Enemy.maxNo; i++) {
-            allEnemies.push(new Enemy(-50.5, Enemy.ranRow(), Enemy.ranSpd()));
+            for (var i = 0; i < Enemy.maxNo; i++) {
+                allEnemies.push(new Enemy(-50.5, Enemy.ranRow(), Enemy.ranSpd()));
+            }
+
+            if (animationID) {
+                win.cancelAnimationFrame(animationID);
+                player.reset(2, 5);
+            }
+
+            lastTime = Date.now();
+            animationID = win.requestAnimationFrame(main);
+        } else {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillText('Select no. of enemies and difficulty', 10, 100);
         }
-
-        if (animationID) {
-            win.cancelAnimationFrame(animationID);
-            player.life = 3;
-            player.reset(2, 5);
-        }
-        
-        lastTime = Date.now();
-        win.requestAnimationFrame(main);
     }
 
     document.getElementById('start').addEventListener('click', reset);
@@ -189,7 +198,8 @@ var Engine = (function(global) {
         'images/water-block.png',
         'images/grass-block.png',
         'images/enemy-bug.png',
-        'images/char-boy.png'
+        'images/char-boy.png',
+        'images/Heart.png'
     ]);
     Resources.onReady(init);
 

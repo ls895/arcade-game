@@ -19,13 +19,23 @@ var Enemy = function(x, yi, dxdt) {
  */
 Enemy.maxBound = 505;
 
+/**
+ * [spread description]
+ * @type {Number}
+ */
 Enemy.spread = 100;
+
 
 Enemy.getSetting = function() {
     var e = document.getElementById('number');
     Enemy.maxNo = parseInt(e.options[e.selectedIndex].value);
     e = document.getElementById('difficulty');
     Enemy.baseSpeed = parseInt(e.options[e.selectedIndex].value);
+    if (!Enemy.maxNo || !Enemy.baseSpeed) {
+        return false;
+    } else {
+        return true;
+    }
 };
 
 /**
@@ -69,22 +79,18 @@ Enemy.prototype.checkCollision = function() {
     if (
         (
             (
-                this.right > player.right
-                &&
+                this.right > player.right &&
                 player.right > this.left
-            )
-            ||
+            ) ||
             (
-                this.right > player.left
-                &&
+                this.right > player.left &&
                 player.left > this.left
             )
-        )
-        &&
+        ) &&
         (this.yi === player.yi)
     ) {
         player.life -= 1;
-        player.reset(2, 5);
+        player.kill(2, 5);
     }
 };
 
@@ -119,6 +125,7 @@ var Player = function(xi, yi) {
     this.yi = yi;
     this.toPixel();
     this.sprite = 'images/char-boy.png';
+    this.heart = 'images/Heart.png';
     this.energy = 100;
     this.life = 3;
 };
@@ -131,11 +138,9 @@ Player.prototype.attack = function() {
             bug = allEnemies[i];
             if (
                 (
-                    bug.right > this.left - 50
-                    &&
+                    bug.right > this.left - 50 &&
                     bug.right < this.left
-                )
-                &&
+                ) &&
                 (bug.yi === this.yi)
             ) {
                 bug.reset();
@@ -151,7 +156,7 @@ Player.prototype.toPixel = function() {
 
 Player.prototype.update = function(dt) {
     if (this.life === 0) {
-        console.log('game over');
+
     }
     if (this.energy < 100) {
         if (this.energy + 10 * dt < 100) {
@@ -164,40 +169,50 @@ Player.prototype.update = function(dt) {
 
 Player.prototype.render = function() {
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
+    for (var i = 0; i < this.life; i++) {
+        ctx.drawImage(Resources.get(this.heart), 10 + 70 * i, 525, 50, 70);
+    }
+    ctx.fillRect(300, 550, this.energy * 1.5, 20);
 };
 
 Player.prototype.handleInput = function(key) {
     switch (true) {
-    case (key === 'left' && this.xi - 1 >= 0) :
-        this.xi -= 1;
-        this.toPixel();
-        return;
-    case (key === 'right' && this.xi + 1 <= 4) :
-        this.xi += 1;
-        this.toPixel();
-        return;
-    case (key === 'down' && this.yi + 1 <= 5) :
-        this.yi += 1;
-        this.toPixel();
-        return;
-    case (key === 'up' && this.yi - 1 >= 0) :
-        this.yi -= 1;
-        if (this.yi === 0) {
-            this.reset(2, 5);
-            return;
-        } else {
+        case (key === 'left' && this.xi - 1 >= 0):
+            this.xi -= 1;
             this.toPixel();
             return;
-        }
-    case (key === 'space'):
-        this.attack();
+        case (key === 'right' && this.xi + 1 <= 4):
+            this.xi += 1;
+            this.toPixel();
+            return;
+        case (key === 'down' && this.yi + 1 <= 5):
+            this.yi += 1;
+            this.toPixel();
+            return;
+        case (key === 'up' && this.yi - 1 >= 0):
+            this.yi -= 1;
+            if (this.yi === 0) {
+                this.reset(2, 5);
+                return;
+            } else {
+                this.toPixel();
+                return;
+            }
+        case (key === 'space'):
+            this.attack();
     }
 };
 
-Player.prototype.reset = function(xi, yi) {
+Player.prototype.kill = function(xi, yi) {
     this.xi = xi;
     this.yi = yi;
     this.toPixel();
+};
+
+Player.prototype.reset = function(xi, yi) {
+    this.kill(xi, yi);
+    this.life = 3;
+    this.energy = 100;
 };
 // Now instantiate your objects.
 // Place all enemy objects in an array called allEnemies
