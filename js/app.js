@@ -9,6 +9,8 @@ var Enemy = function(x, yi, dxdt) {
     this.x = x;
     this.yi = yi;
     this.y = 83 * this.yi - 25;
+    this.left = this.x + 2;
+    this.right = this.x + 98;
     this.dxdt = dxdt;
     this.sprite = 'images/enemy-bug.png';
 };
@@ -61,6 +63,8 @@ Enemy.ranSpd = function() {
  */
 Enemy.prototype.update = function(dt) {
     this.x += this.dxdt * dt;
+    this.left = this.x + 2;
+    this.right = this.x + 98;
     if (this.x > Enemy.maxBound) {
         this.reset();
     }
@@ -72,10 +76,6 @@ Enemy.prototype.update = function(dt) {
  * @return {null}
  */
 Enemy.prototype.checkCollision = function() {
-    this.left = this.x + 2;
-    this.right = this.x + 98;
-    player.left = player.x + 17;
-    player.right = player.x + 84;
     if (
         (
             (
@@ -89,7 +89,6 @@ Enemy.prototype.checkCollision = function() {
         ) &&
         (this.yi === player.yi)
     ) {
-        player.life -= 1;
         player.kill(2, 5);
     }
 };
@@ -102,10 +101,15 @@ Enemy.prototype.reset = function() {
     this.yi = Enemy.ranRow();
     this.x = -50.5;
     this.y = 83 * this.yi - 25;
+    this.left = this.x + 2;
+    this.right = this.x + 98;
     this.dxdt = Enemy.ranSpd();
 };
 
-// Draw the enemy on the screen, required method for game
+/**
+ * Draw enemy bugs on the screen
+ * @return {[type]} [description]
+ */
 Enemy.prototype.render = function() {
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
 };
@@ -126,45 +130,61 @@ var Player = function(xi, yi) {
     this.toPixel();
     this.sprite = 'images/char-boy.png';
     this.heart = 'images/Heart.png';
-    this.energy = 100;
+    this.bullet = 5;
     this.life = 3;
-};
-
-Player.prototype.attack = function() {
-    if (this.energy >= 20) {
-        var bug;
-        this.energy -= 20;
-        for (var i = 0; i < allEnemies.length; i++) {
-            bug = allEnemies[i];
-            if (
-                (
-                    bug.right > this.left - 50 &&
-                    bug.right < this.left
-                ) &&
-                (bug.yi === this.yi)
-            ) {
-                bug.reset();
-            }
-        }
-    }
 };
 
 Player.prototype.toPixel = function() {
     this.x = 101 * this.xi;
     this.y = 83 * this.yi - 30;
+    this.left = this.x + 17;
+    this.right = this.x + 84;
 };
 
 Player.prototype.update = function(dt) {
     if (this.life === 0) {
-
+        return true;
     }
-    if (this.energy < 100) {
-        if (this.energy + 10 * dt < 100) {
-            this.energy += 10 * dt;
-        } else {
-            this.energy = 100;
+    if (this.reloading) {
+        this.reloadGun(dt);
+    }
+    return false;
+};
+
+Player.prototype.fire = function() {
+    if (this.bullet >= 1 && !this.reloading) {
+        bullets.push(new Bullet(this.left, this.yi));
+        this.bullet -= 1;
+        if (this.bullet === 0) {
+            this.reloading = true;
+            this.status = 0;
         }
     }
+};
+
+Player.prototype.reloadGun = function(dt) {
+    if (this.status + 20 * dt < 100) {
+        this.status += 20 * dt;
+        this.bullet = Math.floor(this.status / 20);
+    } else {
+        this.status = 100;
+        this.bullet = 5;
+        this.reloading = false;
+    }
+};
+
+Player.prototype.kill = function(xi, yi) {
+    this.life -=1;
+    this.xi = xi;
+    this.yi = yi;
+    this.toPixel();
+    this.bullet = 5;
+    this.reloading = false;
+};
+
+Player.prototype.reset = function(xi, yi) {
+    this.kill(xi, yi);
+    this.life = 3;
 };
 
 Player.prototype.render = function() {
@@ -172,7 +192,15 @@ Player.prototype.render = function() {
     for (var i = 0; i < this.life; i++) {
         ctx.drawImage(Resources.get(this.heart), 10 + 70 * i, 525, 50, 70);
     }
-    ctx.fillRect(300, 550, this.energy * 1.5, 20);
+    if (!this.reloading) {
+        ctx.font = '30px Arial';
+        ctx.fillText(this.bullet.toString(), 400, 570);
+    } else {
+        ctx.font = '25px Arial';
+        ctx.strokeRect(370, 550, 100, 30);
+        ctx.fillRect(370, 550, this.status, 30);
+        ctx.fillText('reloading', 370, 570);
+    }
 };
 
 Player.prototype.handleInput = function(key) {
@@ -199,25 +227,58 @@ Player.prototype.handleInput = function(key) {
                 return;
             }
         case (key === 'space'):
-            this.attack();
+            this.fire();
+            break;
+        case (key === 'r'):
+            if (this.bullet < 5 && !this.reloading) {
+                this.reloading = true;
+                this.status = this.bullet * 20;
+            }
     }
 };
 
-Player.prototype.kill = function(xi, yi) {
-    this.xi = xi;
+var Bullet = function(x, yi) {
+    this.x = x - 40;
     this.yi = yi;
-    this.toPixel();
+    this.y = 83 * this.yi + 50;
+    this.dxdt = Bullet.speed;
+    this.sprite = 'images/Bullet.png';
 };
 
-Player.prototype.reset = function(xi, yi) {
-    this.kill(xi, yi);
-    this.life = 3;
-    this.energy = 100;
+Bullet.speed = 300;
+
+Bullet.prototype.update = function(dt) {
+    this.x -= this.dxdt * dt;
+    if (this.x + 70 <= 0) {
+        var index = bullets.indexOf(this);
+        bullets.splice(index, 1);
+    } else {
+        this.checkHit();
+    }
+};
+
+Bullet.prototype.checkHit = function() {
+    var bug;
+    for (var i = 0; i < allEnemies.length; i++) {
+        bug = allEnemies[i];
+        if (bug.yi === this.yi) {
+            if (this.x <= bug.right && bug.right <= this.x + 10) {
+                bug.reset();
+                var index = bullets.indexOf(this);
+                bullets.splice(index, 1);
+            }
+        }
+    }
+};
+
+Bullet.prototype.render = function() {
+    ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
 };
 // Now instantiate your objects.
 // Place all enemy objects in an array called allEnemies
 // Place the player object in a variable called player
 
+var bullets = [];
 var allEnemies = [];
 var player = new Player(2, 5);
 
@@ -229,7 +290,8 @@ document.addEventListener('keyup', function(e) {
         37: 'left',
         38: 'up',
         39: 'right',
-        40: 'down'
+        40: 'down',
+        82: 'r'
     };
 
     player.handleInput(allowedKeys[e.keyCode]);

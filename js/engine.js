@@ -24,7 +24,8 @@ var Engine = (function(global) {
         canvas = doc.createElement('canvas'),
         ctx = canvas.getContext('2d'),
         lastTime,
-        animationID;
+        animationID,
+        isDead;
 
     canvas.width = 505;
     canvas.height = 606;
@@ -47,6 +48,13 @@ var Engine = (function(global) {
          * our update function since it may be used for smooth animation.
          */
         update(dt);
+
+        if (isDead) {
+            win.cancelAnimationFrame(animationID);
+            init();
+            return;
+        }
+
         render();
 
         /* Set our lastTime variable which is used to determine the time delta
@@ -98,7 +106,14 @@ var Engine = (function(global) {
         allEnemies.forEach(function(enemy) {
             enemy.update(dt);
         });
-        player.update(dt);
+
+        isDead = player.update(dt);
+
+        if (bullets.length > 0) {
+            bullets.forEach(function(bullet) {
+                bullet.update(dt);
+            });
+        }
     }
 
     /* This function initially draws the 'game level', it will then call
@@ -156,6 +171,12 @@ var Engine = (function(global) {
         });
 
         player.render();
+
+        if (bullets.length > 0) {
+            bullets.forEach(function(bullet) {
+                bullet.render();
+            });
+        }
     }
 
     /* This function does nothing but it could have been a good place to
@@ -165,9 +186,11 @@ var Engine = (function(global) {
     function reset() {
         this.blur();
         if (Enemy.getSetting()) {
-            ctx.fillStyle = 'red';
+            ctx.fillStyle = 'gold';
 
             allEnemies.length = 0;
+            
+            bullets.length = 0;
 
             for (var i = 0; i < Enemy.maxNo; i++) {
                 allEnemies.push(new Enemy(-50.5, Enemy.ranRow(), Enemy.ranSpd()));
@@ -199,7 +222,8 @@ var Engine = (function(global) {
         'images/grass-block.png',
         'images/enemy-bug.png',
         'images/char-boy.png',
-        'images/Heart.png'
+        'images/Heart.png',
+        'images/Bullet.png'
     ]);
     Resources.onReady(init);
 
