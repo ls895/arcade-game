@@ -49,6 +49,10 @@ var Engine = (function(global) {
          */
         update(dt);
 
+        /**
+         * Check if the Player is dead, if dead cancel the next frame animation,
+         * run init() again and return from main().
+         */
         if (isDead) {
             win.cancelAnimationFrame(animationID);
             init();
@@ -65,7 +69,6 @@ var Engine = (function(global) {
         /* Use the browser's requestAnimationFrame function to call this
          * function again as soon as the browser is able to draw another frame.
          */
-
         animationID = win.requestAnimationFrame(main);
 
     }
@@ -77,9 +80,12 @@ var Engine = (function(global) {
     function init() {
         ctx.font = '30px Arial';
         ctx.fillStyle = 'black';
-        ctx.fillText('1. Select no. of enemies', 10, 100);
-        ctx.fillText('2. Select difficulty', 10, 150);
-        ctx.fillText('3. Press start to play or reset game', 10, 200);
+        ctx.fillText('1. Select No. of enemies', 10, 100);
+        ctx.fillText('2. Select Difficulty', 10, 150);
+        ctx.fillText('3. Press Start to play or reset game', 10, 200);
+        ctx.fillText('4. Press Arrow keys to move', 10, 250);
+        ctx.fillText('5. Press Space to fire', 10, 300);
+        ctx.fillText('6. Press R to reload', 10, 350);
     }
 
     /* This function is called by main (our game loop) and itself calls all
@@ -107,8 +113,15 @@ var Engine = (function(global) {
             enemy.update(dt);
         });
 
+        /* Store the Player living or death status into isDead variable
+         * and run the player update method.
+         */
         isDead = player.update(dt);
 
+        /**
+         * Run the bullet update method if there are bullet object in
+         * the bullets array.
+         */
         if (bullets.length > 0) {
             bullets.forEach(function(bullet) {
                 bullet.update(dt);
@@ -184,28 +197,28 @@ var Engine = (function(global) {
      * those sorts of things. It's only called once by the init() method.
      */
     function reset() {
+        // Clear Start button focus
         this.blur();
+
         if (Enemy.getSetting()) {
             ctx.fillStyle = 'gold';
-
+            // Clear allEnemies array on every reset
             allEnemies.length = 0;
-            
+            // Clear bullets array on every reset
             bullets.length = 0;
-
             for (var i = 0; i < Enemy.maxNo; i++) {
                 allEnemies.push(new Enemy(-50.5, Enemy.ranRow(), Enemy.ranSpd()));
             }
-
             if (animationID) {
                 win.cancelAnimationFrame(animationID);
                 player.reset(2, 5);
             }
-
             lastTime = Date.now();
             animationID = win.requestAnimationFrame(main);
         } else {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillText('Select no. of enemies and difficulty', 10, 100);
+            ctx.fillText('Please select the options', 10, 100);
+            ctx.fillText('Then press Start', 10, 150);
         }
     }
 
