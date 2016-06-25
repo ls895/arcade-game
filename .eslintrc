@@ -9,7 +9,13 @@
     "jquery": true,
   },
   "globals": {
-
+      'allEnemies',
+      'bullets',
+      'player',
+      'Enemy',
+      'Resources',
+      'ctx',
+      'gameStatus'
   },
   "rules": {
     "quotes": [

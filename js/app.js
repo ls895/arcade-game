@@ -1,17 +1,16 @@
 /**
  * Enemy constructor
  * @constructor
- * @param  {float} x horizontal coordinate
  * @param  {integer} yi row number
  * @param  {integer} dxdt movement speed as pixel per second
  * @return {object} Enemy A Enemy object
  */
-var Enemy = function(x, yi, dxdt) {
+var Enemy = function(yi, dxdt) {
     /**
      * Horizontal coordinate of the Enemy object
      * @type {float}
      */
-    this.x = x;
+    this.x = -98;
     /**
      * Row number of the Enemy object
      * @type {integer}
@@ -33,7 +32,7 @@ var Enemy = function(x, yi, dxdt) {
      */
     this.right = this.x + 98;
     /**
-     * Speed of the Enemy object
+     * Speed of the Enemy object (pixel per second)
      * @type {float}
      */
     this.dxdt = dxdt;
@@ -49,14 +48,14 @@ var Enemy = function(x, yi, dxdt) {
  * @constant
  * @type {integer}
  */
-Enemy.maxBound = 505;
+Enemy.MAX_BOUND = 505;
 
 /**
  * Distribution of Enemy objects movement speed (pixel per second)
  * @constant
  * @type {integer}
  */
-Enemy.spread = 100;
+Enemy.SPREAD = 100;
 
 /**
  * Get user settings for Enemy numbers and difficulty (i.e. movement speed)
@@ -69,19 +68,18 @@ Enemy.getSetting = function() {
      * @constant
      * @type {integer}
      */
-    Enemy.maxNo = parseInt(e.options[e.selectedIndex].value);
+    Enemy.MAX_NO = parseInt(e.options[e.selectedIndex].value);
     e = document.getElementById('difficulty');
     /**
      * Enemy base movement speed as pixel per second
      * @constant
      * @type {integer}
      */
-    Enemy.baseSpeed = parseInt(e.options[e.selectedIndex].value);
-    if (!Enemy.maxNo || !Enemy.baseSpeed) {
+    Enemy.BASE_SPEED = parseInt(e.options[e.selectedIndex].value);
+    if (!Enemy.MAX_NO || !Enemy.BASE_SPEED) {
         return false;
-    } else {
-        return true;
     }
+    return true;
 };
 
 /**
@@ -89,7 +87,7 @@ Enemy.getSetting = function() {
  * @return {integer} a random row number
  */
 Enemy.ranRow = function() {
-    return (Math.floor(Math.random() * 3) + 1);
+    return Math.floor(Math.random() * 3) + 1;
 };
 
 /**
@@ -97,7 +95,7 @@ Enemy.ranRow = function() {
  * @return {float} a random speed
  */
 Enemy.ranSpd = function() {
-    return (Math.random() * Enemy.spread + Enemy.baseSpeed);
+    return Math.random() * Enemy.SPREAD + Enemy.BASE_SPEED;
 };
 
 /**
@@ -109,10 +107,11 @@ Enemy.prototype.update = function(dt) {
     this.x += this.dxdt * dt;
     this.left = this.x + 2;
     this.right = this.x + 98;
-    if (this.x > Enemy.maxBound) {
+    if (this.x > Enemy.MAX_BOUND) {
         this.reset();
+    } else {
+        this.checkCollision();
     }
-    this.checkCollision();
 };
 
 /**
@@ -138,16 +137,11 @@ Enemy.prototype.checkCollision = function() {
 };
 
 /**
- * Reset Enemy object position after Enemy object goes out of bound
+ * Reset Enemy object position after Enemy object goes out of bound or gets hit
  * @return {null}
  */
 Enemy.prototype.reset = function() {
-    this.yi = Enemy.ranRow();
-    this.x = -50.5;
-    this.y = 83 * this.yi - 25;
-    this.left = this.x + 2;
-    this.right = this.x + 98;
-    this.dxdt = Enemy.ranSpd();
+    Enemy.call(this, Enemy.ranRow(), Enemy.ranSpd());
 };
 
 /**
@@ -158,18 +152,15 @@ Enemy.prototype.render = function() {
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
 };
 
-// Now write your own player class
-// This class requires an update(), render() and
-// a handleInput() method.
-
 /**
  * Player constructor
  * @constructor
  * @param  {integer} xi column number
  * @param  {integer} yi row number
+ * @param  {integer} [n] number of times won
  * @return {object} Player A Player object
  */
-var Player = function(xi, yi) {
+var Player = function(xi, yi, n) {
     /**
      * Column number of the Player object
      * @type {integer}
@@ -191,6 +182,12 @@ var Player = function(xi, yi) {
      * @type {integer}
      */
     this.life = 3;
+    /**
+     * How many times the Player object has won
+     * Default as 0
+     * @type {integer}
+     */
+    this.won = n || 0;
     /**
      * Image asset of the Player object
      * @type {string}
@@ -233,20 +230,18 @@ Player.prototype.toPixel = function() {
 /**
  * Update the Player object every frame
  * @param  {float} dt time delta between successive frames
- * @return {boolean} True or false depending on whether the Player is dead
+ * @return {null}
  */
 Player.prototype.update = function(dt) {
-    if (this.life === 0) {
-        return true;
-    }
+    // If the Player object is reloading, call reloadGun()
     if (this.reloading) {
         this.reloadGun(dt);
     }
-    return false;
 };
 
 /**
- * Fire a bullet from the Player object
+ * Fire a bullet from the Player object, reduce bullet inventory accordingly
+ * Reload gun if bullet inventory is at 0
  * @return {null}
  */
 Player.prototype.fire = function() {
@@ -255,12 +250,12 @@ Player.prototype.fire = function() {
         this.bullet -= 1;
         if (this.bullet === 0) {
             /**
-             * Indicates whether the Player is reloading
+             * Indicates whether the Player object is reloading
              * @type {boolean}
              */
             this.reloading = true;
             /**
-             * Indicates the reloading status or progress of the Player
+             * Indicates the reloading status or progress of the Player object
              * @type {float}
              */
             this.status = 0;
@@ -274,6 +269,7 @@ Player.prototype.fire = function() {
  * @return {null}
  */
 Player.prototype.reloadGun = function(dt) {
+    // Reload speed is 1 bullet per second upto maximum of 5 bullets in 5 second
     if (this.status + 20 * dt < 100) {
         this.status += 20 * dt;
         this.bullet = Math.floor(this.status / 20);
@@ -285,13 +281,18 @@ Player.prototype.reloadGun = function(dt) {
 };
 
 /**
- * Kill the Player and reset the Player's position and inventory
+ * Kill the Player object and reset the Player object's position and inventory
  * @param  {integer} xi column number
  * @param  {integer} yi row number
  * @return {null}
  */
 Player.prototype.kill = function(xi, yi) {
     this.life -= 1;
+    // Do not continue if player is dead and set gameStatus = 0
+    if (this.life === 0) {
+        gameStatus = 0;
+        return;
+    }
     this.xi = xi;
     this.yi = yi;
     this.toPixel();
@@ -300,25 +301,32 @@ Player.prototype.kill = function(xi, yi) {
 };
 
 /**
- * Reset the Player totally including number of life
+ * Reset the Player including number of life, number of times won (optional) and
+ * reloading status
  * @param  {integer} xi column number
  * @param  {integer} yi row number
+ * @param  {integer} [n] number of times won
  * @return {null}
  */
-Player.prototype.reset = function(xi, yi) {
-    this.kill(xi, yi);
-    this.life = 3;
+Player.prototype.reset = function(xi, yi, n) {
+    Player.call(this, xi, yi, n);
+    this.reloading = false;
 };
 
 /**
- * Draw the Player object, the Player hearts, the bullet inventory and reloading status
+ * Draw the Player object, the Player hearts, the bullet inventory and reloading
+ * status
  * @return {null}
  */
 Player.prototype.render = function() {
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
+
+    // Draw the Player hearts
     for (var i = 0; i < this.life; i++) {
         ctx.drawImage(Resources.get(this.heart), 70 * i + 10, 525, 50, 70);
     }
+
+    // Draw bullet inventory or reloading status
     if (!this.reloading) {
         ctx.font = '30px Arial';
         ctx.fillText(this.bullet.toString(), 400, 570);
@@ -332,7 +340,9 @@ Player.prototype.render = function() {
 
 /**
  * Handle input from keyboard and select Player object responses
- * @param  {string} key Keypress
+ * Player object out of bound conditions are handled
+ * Player object reaching the river condition is handled
+ * @param  {string} key Keypress input from user
  * @return {null}
  */
 Player.prototype.handleInput = function(key) {
@@ -351,20 +361,29 @@ Player.prototype.handleInput = function(key) {
             return;
         case (key === 'up' && this.yi - 1 >= 0):
             this.yi -= 1;
+            // Check if Player object reaching the river
             if (this.yi === 0) {
-                this.reset(2, 5);
+                this.reset(2, 5, this.won);
+                this.won += 1;
+                if (this.won === 3) {
+                    gameStatus = 1;
+                    return;
+                }
                 return;
             } else {
                 this.toPixel();
                 return;
             }
+            // Handle fire events
         case (key === 'space'):
             this.fire();
-            break;
+            return;
+            // Handle reload events
         case (key === 'r'):
             if (this.bullet < 5 && !this.reloading) {
                 this.reloading = true;
                 this.status = this.bullet * 20;
+                return;
             }
     }
 };
@@ -451,27 +470,14 @@ Bullet.prototype.checkHit = function() {
 Bullet.prototype.render = function() {
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
 };
-// Now instantiate your objects.
-// Place all enemy objects in an array called allEnemies
-// Place the player object in a variable called player
 
-/**
- * Array storing Bullet objects instantiation
- * @type {Array}
- */
+// Array storing Bullet objects instantiation
 var bullets = [];
 
-/**
- * Array storing Enemy objects instantiation
- * @type {Array}
- */
+// Array storing Enemy objects instantiation
 var allEnemies = [];
 
-/**
- * Player object instantiation
- * @param {integer} 2 column number of the Player object
- * @param {integer} 5 row number of the Player object
- */
+// Player object instantiation
 var player = new Player(2, 5);
 
 // This listens for key presses and sends the keys to your
