@@ -80,7 +80,7 @@ var Engine = (function(global) {
         ctx.fillText('5. Press Space to fire', 10, 300);
         ctx.fillText('6. Press R to reload', 10, 350);
         ctx.fillText('7. Cross 3 times to win the game', 10, 400);
-        ctx.fillText('8. Dying 3 times loses the game', 10, 450);
+        ctx.fillText('8. Do not get killed 3 times in a row', 10, 450);
     }
 
     function update(dt) {
