@@ -1,4 +1,16 @@
 /**
+ * Pixels in width for a tile
+ * @type {integer}
+ */
+var TILE_WIDTH = 101;
+
+/**
+ * Pixels in height for a tile
+ * @type {integer}
+ */
+var TILE_HEIGHT = 83;
+
+/**
  * Enemy constructor
  * @constructor
  * @param  {integer} yi row number
@@ -20,7 +32,7 @@ var Enemy = function(yi, dxdt) {
      * Vertical coordinate of the Enemy object
      * @type {integer}
      */
-    this.y = 83 * this.yi - 25;
+    this.y = TILE_HEIGHT * this.yi - 25;
     /**
      * Tail of the Enemy object
      * @type {float}
@@ -209,12 +221,12 @@ Player.prototype.toPixel = function() {
      * Horizontal coordinate of the Player object
      * @type {float}
      */
-    this.x = 101 * this.xi;
+    this.x = TILE_WIDTH * this.xi;
     /**
      * Vertical coordinate of the PLayer object
      * @type {float}
      */
-    this.y = 83 * this.yi - 30;
+    this.y = TILE_HEIGHT * this.yi - 30;
     /**
      * Left hand side coordinate of the Player object
      * @type {float}
@@ -410,7 +422,7 @@ var Bullet = function(x, yi) {
      * Vertical coordinate of the Bullet object
      * @type {float}
      */
-    this.y = 83 * this.yi + 50;
+    this.y = TILE_HEIGHT * this.yi + 50;
     /**
      * Movement speed of the Bullet object
      * @type {integer}
